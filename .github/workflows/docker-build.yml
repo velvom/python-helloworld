@@ -1,1 +1,56 @@
+##  Named of the workflow.
+name: Docker Build and Push
 
+## Set the trigger policy that controls when the actions will run.
+## Triggers the workflow on push or pull request events
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+## List the jobs that can run sequentially or in parallel in this work flow
+jobs:
+  ## One job is to "build"
+  build:
+    ## Configure the operating system the workflow should run on.
+    ## In this case, the job on Ubuntu.
+    runs-on: ubuntu-latest
+
+    ## Define a sequence of tasks to be executed for this job
+    steps:
+      ## Use the public `checkout` action  in version v2  
+      ## to checkout the existing code in the repository
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      ## To add emulation support with QEMU to be able to
+      ## build against more platforms/exec environments.  
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      ## To use an extended Docker CLI build capabilities.
+      ## Create and boot a builder using by default the
+      ## docker-container builder driver. This is not 
+      ## required, but recommended using it to be able to
+      ## build multi-platform images, export cache, etc.
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      ## To login in against a Docker registry
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      ## To build and push
+      -
+        name: Build and push the imahe to DockerHub
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: velvom/python-helloworld:latest
